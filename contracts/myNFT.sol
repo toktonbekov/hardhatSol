@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -9,12 +9,11 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract myNFT is ERC721, ERC721Enumerable, Ownable {
-
     using SafeMath for uint256;
     uint public constant maxPurchase = 10;
     uint256 public constant MAX_NFTS = 10000;
 
-    uint256 private _nftPrice = 1 ether;
+    uint256 private _nftPrice = 0.000000000000000001 ether;
     string private baseURI;
     bool public saleIsActive = true;
 
@@ -76,3 +75,4 @@ contract myNFT is ERC721, ERC721Enumerable, Ownable {
         saleIsActive = !saleIsActive;
     }  
 }
+

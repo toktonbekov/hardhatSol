@@ -1,40 +1,60 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-// import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("staking", function (){
-
+  let owner;
+  let acc1;
+  let accs;
+  let contractNft;
   let contract;
-  let addr1;
-  let addr2;
-  let addrs;
-
+  
   beforeEach(async () => {
-    const Staking = await ethers.getContractFactory("staking",addr1);
-    [ addr1, addr2, ...addrs] = await ethers.getSigners();
-    contract = await Staking.deploy("0xdD2FD4581271e230360230F9337D5c0430Bf44C0");
-    await contract.deployed()
+    const Token = await ethers.getContractFactory("myNFT");
+    [owner, acc1, ...accs] = await ethers.getSigners();
+    contractNft = await Token.deploy();
+    await contractNft.mintNFTs(1, {value: 100000000})
   });
 
-
+  beforeEach(async () => {
+    const Staking = await ethers.getContractFactory("staking");
+    contract = await Staking.deploy(contractNft.address);
+    await contract.deployed()
+  });
+  
   it("Staking time must be right", async () => {
-      expect(await contract.SECONDS_TILL_WITHDRAW()).to.eq(2592000);
+    expect(await contract.SECONDS_TILL_WITHDRAW()).to.eq(2592000);    
   })
-
+  
   it("Reward per block must be right", async () => {
     expect(await contract.REWARD_PER_BLOCK()).to.eq(100000000);
-    })
-
+  })
+  
   it("Staked amount should be zero", async () => {
-    expect(await contract.calculateReward(addr1.address)).to.eq(0);
+    expect(await contract.calculateReward(owner.address)).to.eq(0);
   })
-
+  
   it("isValidator should return FALSE for non-validators", async () => {
-    expect(await contract.isValidator(addr1.address)).to.be.false
+    expect(await contract.isValidator(owner.address)).to.be.false
   })
-
+  
   it("calculateReward should be zero", async ()=>{
-    expect(await contract.calculateReward(addr1.address)).to.eq(0)
+    expect(await contract.calculateReward(owner.address)).to.eq(0)
   })
+  
+  it("Should deposit token", async () => {
+    const tokenOwner = contractNft.ownerOf(0)
+    await contractNft.approve(contract.address, 0, {from: tokenOwner})
+    await contract.deposit(0, {from: contractNft.ownerOf(0)})
+    expect(await contract.isValidator(tokenOwner)).to.be.true
+    expect(await contract.depositedTokens(tokenOwner)).to.be.eq(0)
+  });
 
+  it("Should withdraw token", async () => {
+    const tokenOwner = contractNft.ownerOf(0)
+    await contractNft.approve(contract.address, 0, {from: tokenOwner})
+    await contract.deposit(0, {from: tokenOwner})
+    await ethers.provider.send("evm_increaseTime", [2592000])
+    await contract.withdraw({from: tokenOwner})
+    expect(await contract.isValidator(tokenOwner)).to.be.false
+  })
 })

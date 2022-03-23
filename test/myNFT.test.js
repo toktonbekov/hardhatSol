@@ -2,7 +2,6 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("myNFT", function (){
-
   let contract;
   let owner;
   let addr1;
@@ -20,6 +19,7 @@ describe("myNFT", function (){
 
   it("Should initialize contract", async () => {
     expect(await contract.MAX_NFTS()).to.eq(10000);
+    console.log(contract.address);
   });
   it("Should set the right owner", async () => {
     expect(await contract.owner()).to.eq(await owner.address);
@@ -32,6 +32,6 @@ describe("myNFT", function (){
         value: price,
       })
     ).to.emit(contract, "Transfer").withArgs(ethers.constants.AddressZero, owner.address, tokenId);  
-    expect(await contract.tokenURI(tokenId)).to.eq(baseURI+"0");
+    expect(await contract.tokenURI(tokenId)).to.eq(baseURI+"0")
   });
 });

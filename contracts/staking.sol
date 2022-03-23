@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./myNFT.sol";
+import "hardhat/console.sol";
 
 contract staking is ERC721 {
     mapping(address => uint256) public checkpoints;
@@ -13,15 +14,10 @@ contract staking is ERC721 {
 
     uint256 public REWARD_PER_BLOCK = 100000000;
     uint256 public SECONDS_TILL_WITHDRAW = 2592000; //30 days
-    // uint256 time_stamp;
-
 
     constructor(address token) ERC721("Staking Token", "ST") {
         my_token = ERC721(token);
     }
-    // constructor() ERC721("Staking Token", "ST") {
-    //     my_token = ERC721(0x7EF2e0048f5bAeDe046f6BF797943daF4ED8CB47);
-    // }
 
 // MODIFIERS
     modifier forStaker() {
@@ -35,7 +31,7 @@ contract staking is ERC721 {
     }
 
     modifier availableForWithdraw() {
-        require(time_stamp[msg.sender] + SECONDS_TILL_WITHDRAW <= block.timestamp);
+        require(time_stamp[msg.sender] + SECONDS_TILL_WITHDRAW <= block.timestamp, "30 days didn't expire");
         _;
     }
 
@@ -46,12 +42,7 @@ contract staking is ERC721 {
 
 
 // FUNCTIONS
-    function deposit(uint256 tokenId) external senderIsOwner(tokenId) forNotStaker {
-        // require(
-        //     msg.sender == my_token.ownerOf(tokenId),
-        //     "Sender must be owner"
-        // );
-        // require(!has_deposited[msg.sender], "Sender already deposited");
+     function deposit(uint256 tokenId) external forNotStaker {
 
         if (checkpoints[msg.sender] == 0) {
             checkpoints[msg.sender] = block.number;
@@ -63,9 +54,7 @@ contract staking is ERC721 {
         time_stamp[msg.sender] = block.timestamp;
     }
 
-    function withdraw() external forStaker availableForWithdraw{
-        // require(has_deposited[msg.sender], "No tokens to withdarw");
-        // require(time_stamp + SECONDS_TILL_WITHDRAW <= block.timestamp);
+    function withdraw() external forStaker availableForWithdraw {
         collect(msg.sender);
         my_token.transferFrom(
             address(this),
@@ -75,8 +64,7 @@ contract staking is ERC721 {
         has_deposited[msg.sender] = false;
     }
 
-    function collect(address beneficiary) public availableForWithdraw{
-        // require(time_stamp + SECONDS_TILL_WITHDRAW <= block.timestamp);
+    function collect(address beneficiary) availableForWithdraw public {
         uint256 reward = calculateReward(beneficiary);
         checkpoints[beneficiary] = block.number;
         _mint(msg.sender, reward);
@@ -91,7 +79,8 @@ contract staking is ERC721 {
             return 0;
         }
         uint256 checkpoint = checkpoints[beneficiary];
-        return REWARD_PER_BLOCK * (block.number - checkpoint);
+        uint256 reward = REWARD_PER_BLOCK * (block.number - checkpoint);
+        return reward;
     }
 
     function validators(address addr) public view returns (uint256) {
